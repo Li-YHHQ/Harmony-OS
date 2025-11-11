@@ -1,0 +1,11 @@
+{
+  "src": [
+    "pages/Index",
+    "pages/lesson9/WelcomePage",
+    "pages/lesson9/LoginPage_opt",
+    "pages/lesson9/RegisterPage1",
+    "pages/lesson9/VehicleBindPage",
+    "pages/lesson9/HomePage",
+    "pages/lesson9/MinePage"
+  ]
+}
