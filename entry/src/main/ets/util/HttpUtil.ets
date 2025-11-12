@@ -9,6 +9,72 @@ import { UserInfoResponse } from '../model/UserInfo';
  */
 const BASE_URL = 'http://121.36.14.143:10001';
 
+export interface FeedbackRecord {
+  createBy?: string;
+  createTime?: string;
+  updateBy?: string;
+  updateTime?: string;
+  remark?: string;
+  params?: Record<string, Object>;
+  id?: string;
+  userId?: string;
+  userName?: string;
+  nickName?: string;
+  phonenumber?: string;
+  content?: string;
+  status?: string;
+  picUrl?: string;
+  delFlag?: string;
+}
+
+export interface FeedbackListResponse {
+  msg?: string;
+  code?: number;
+  data?: FeedbackRecord[];
+}
+
+export interface FeedbackDetailRecord {
+  createBy?: string;
+  createTime?: string;
+  updateBy?: string;
+  updateTime?: string;
+  id?: string;
+  userId?: string;
+  userName?: string;
+  reply?: string;
+  nickName?: string;
+  phonenumber?: string;
+  content?: string;
+  status?: string;
+  picUrl?: string;
+  delFlag?: string;
+}
+
+export interface FeedbackDetailResponse {
+  msg?: string;
+  code?: number;
+  data?: FeedbackDetailRecord;
+}
+
+export interface CreateFeedbackPayload {
+  id: number;
+  userId: number;
+  userName: string;
+  nickName: string;
+  phonenumber: string;
+  content: string;
+  status: string;
+  picUrl: string;
+  delFlag: string;
+  searchValue: string;
+  createBy: string;
+  createTime: string;
+  updateBy: string;
+  updateTime: string;
+  remark: string;
+  params: Record<string, Object>;
+}
+
 /**
  * 登录请求
  * @param username 用户名
@@ -45,6 +111,139 @@ export async function loginRequest(username: string, password: string): Promise<
         resolve(response);
       } catch (parseErr) {
         console.error(`解析响应数据失败: ${JSON.stringify(parseErr)}`);
+        reject(parseErr);
+      }
+    });
+  });
+}
+
+export async function deleteFeedbackRequest(token: string, ids: string | number): Promise<CommonResponse> {
+  return new Promise<CommonResponse>((resolve, reject) => {
+    const httpRequest = http.createHttp();
+    const url = `${BASE_URL}/cockpit/feedback/${ids}`;
+
+    httpRequest.request(url, {
+      method: http.RequestMethod.DELETE,
+      header: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      connectTimeout: 10000,
+      readTimeout: 10000
+    }, (err, data) => {
+      httpRequest.destroy();
+
+      if (err) {
+        console.error(`删除反馈失败: ${JSON.stringify(err)}`);
+        reject(err);
+        return;
+      }
+
+      try {
+        const response = JSON.parse(data.result as string) as CommonResponse;
+        resolve(response);
+      } catch (parseErr) {
+        console.error(`解析删除反馈响应失败: ${JSON.stringify(parseErr)}`);
+        reject(parseErr);
+      }
+    });
+  });
+}
+
+export async function getFeedbackDetailRequest(token: string, id: string | number): Promise<FeedbackDetailResponse> {
+  return new Promise<FeedbackDetailResponse>((resolve, reject) => {
+    const httpRequest = http.createHttp();
+    const url = `${BASE_URL}/cockpit/feedback/${id}`;
+
+    httpRequest.request(url, {
+      method: http.RequestMethod.GET,
+      header: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      connectTimeout: 10000,
+      readTimeout: 10000
+    }, (err, data) => {
+      httpRequest.destroy();
+
+      if (err) {
+        console.error(`获取反馈详情失败: ${JSON.stringify(err)}`);
+        reject(err);
+        return;
+      }
+
+      try {
+        const response = JSON.parse(data.result as string) as FeedbackDetailResponse;
+        resolve(response);
+      } catch (parseErr) {
+        console.error(`解析反馈详情数据失败: ${JSON.stringify(parseErr)}`);
+        reject(parseErr);
+      }
+    });
+  });
+}
+
+export async function createFeedbackRequest(token: string, payload: CreateFeedbackPayload): Promise<CommonResponse> {
+  return new Promise<CommonResponse>((resolve, reject) => {
+    const httpRequest = http.createHttp();
+    const url = `${BASE_URL}/cockpit/feedback/add`;
+
+    httpRequest.request(url, {
+      method: http.RequestMethod.POST,
+      header: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      extraData: JSON.stringify(payload),
+      connectTimeout: 10000,
+      readTimeout: 10000
+    }, (err, data) => {
+      httpRequest.destroy();
+
+      if (err) {
+        console.error(`新增反馈失败: ${JSON.stringify(err)}`);
+        reject(err);
+        return;
+      }
+
+      try {
+        const response = JSON.parse(data.result as string) as CommonResponse;
+        resolve(response);
+      } catch (parseErr) {
+        console.error(`解析新增反馈响应失败: ${JSON.stringify(parseErr)}`);
+        reject(parseErr);
+      }
+    });
+  });
+}
+
+export async function getFeedbackListRequest(token: string): Promise<FeedbackListResponse> {
+  return new Promise<FeedbackListResponse>((resolve, reject) => {
+    const httpRequest = http.createHttp();
+    const url = `${BASE_URL}/cockpit/feedback/backList`;
+
+    httpRequest.request(url, {
+      method: http.RequestMethod.GET,
+      header: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      connectTimeout: 10000,
+      readTimeout: 10000
+    }, (err, data) => {
+      httpRequest.destroy();
+
+      if (err) {
+        console.error(`获取反馈列表失败: ${JSON.stringify(err)}`);
+        reject(err);
+        return;
+      }
+
+      try {
+        const response = JSON.parse(data.result as string) as FeedbackListResponse;
+        resolve(response);
+      } catch (parseErr) {
+        console.error(`解析反馈列表数据失败: ${JSON.stringify(parseErr)}`);
         reject(parseErr);
       }
     });
