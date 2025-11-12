@@ -29,6 +29,54 @@ struct MinePage {
     .padding(10)
   }
 
+  @Builder
+  personalTab() {
+    Column() {
+      Text('我的页面')
+        .fontSize(24)
+        .fontWeight(FontWeight.Bold)
+        .margin({ top: 50, bottom: 30 })
+
+      if (this.token) {
+        Text(`Token: ${this.token.substring(0, 20)}...`)
+          .fontSize(14)
+          .fontColor('#666666')
+          .margin({ bottom: 20 })
+
+        Button('退出登录')
+          .width('80%')
+          .height(45)
+          .borderRadius(10)
+          .fontSize(16)
+          .backgroundColor('#FF3B30')
+          .onClick(() => {
+            this.handleLogout();
+          })
+      } else {
+        Text('当前未登录，请先登录账号')
+          .fontSize(16)
+          .fontColor('#666666')
+          .margin({ bottom: 20 })
+        Button('去登录')
+          .width('80%')
+          .height(45)
+          .borderRadius(10)
+          .fontSize(16)
+          .backgroundColor('#0A59F7')
+          .onClick(() => {
+            router.pushUrl({
+              url: 'pages/lesson9/LoginPage_opt'
+            });
+          })
+      }
+    }
+    .width('100%')
+    .height('100%')
+    .justifyContent(FlexAlign.Start)
+    .alignItems(HorizontalAlign.Center)
+    .backgroundColor('#F5F5F5')
+  }
+
   private async handleLogout() {
     const context = getContext(this) as Context;
     try {
@@ -67,7 +115,7 @@ struct MinePage {
       }.tabBar(this.tabNavBuilder('资源', 2, $r('app.media.ziyuan1'), $r('app.media.ziyuan2')))
 
       TabContent() {
-        PersonalTab({ token: this.token, onLogout: this.handleLogout.bind(this) })
+        this.personalTab()
       }.tabBar(this.tabNavBuilder('我的', 3, $r('app.media.me1'), $r('app.media.me2')))
     }
     .onChange((index: number) => {
@@ -123,59 +171,6 @@ struct ResourceTab {
     .height('100%')
     .alignItems(HorizontalAlign.Center)
     .justifyContent(FlexAlign.Start)
-    .backgroundColor('#F5F5F5')
-  }
-}
-
-@Component
-struct PersonalTab {
-  @Link token: string;
-  @Prop onLogout: () => void;
-
-  build() {
-    Column() {
-      Text('我的页面')
-        .fontSize(24)
-        .fontWeight(FontWeight.Bold)
-        .margin({ top: 50, bottom: 30 })
-
-      if (this.token) {
-        Text(`Token: ${this.token.substring(0, 20)}...`)
-          .fontSize(14)
-          .fontColor('#666666')
-          .margin({ bottom: 20 })
-
-        Button('退出登录')
-          .width('80%')
-          .height(45)
-          .borderRadius(10)
-          .fontSize(16)
-          .backgroundColor('#FF3B30')
-          .onClick(() => {
-            this.onLogout();
-          })
-      } else {
-        Text('当前未登录，请先登录账号')
-          .fontSize(16)
-          .fontColor('#666666')
-          .margin({ bottom: 20 })
-        Button('去登录')
-          .width('80%')
-          .height(45)
-          .borderRadius(10)
-          .fontSize(16)
-          .backgroundColor('#0A59F7')
-          .onClick(() => {
-            router.pushUrl({
-              url: 'pages/lesson9/LoginPage_opt'
-            });
-          })
-      }
-    }
-    .width('100%')
-    .height('100%')
-    .justifyContent(FlexAlign.Start)
-    .alignItems(HorizontalAlign.Center)
     .backgroundColor('#F5F5F5')
   }
 }
