@@ -6,6 +6,9 @@
     "pages/lesson9/RegisterPage1",
     "pages/lesson9/VehicleBindPage",
     "pages/lesson9/HomePage",
-    "pages/lesson9/MinePage"
+    "pages/lesson9/MinePage",
+    "pages/lesson9/FeedbackListPage",
+    "pages/lesson9/FeedbackDetailPage",
+    "pages/lesson9/CreateFeedbackPage"
   ]
 }

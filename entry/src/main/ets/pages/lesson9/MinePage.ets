@@ -3,6 +3,7 @@ import router from '@ohos.router';
 import { clearToken, getToken } from '../../util/StorageUtil';
 import { Context } from '@kit.AbilityKit';
 import { HomeContentComp } from './HomeContentComp';
+import { FeedbackListPage } from './FeedbackListPage';
 
 @Entry
 @Component
@@ -107,7 +108,7 @@ struct MinePage {
       }.tabBar(this.tabNavBuilder('首页', 0, $r('app.media.shouye1'), $r('app.media.shouye2')))
 
       TabContent() {
-        FeedbackListTab()
+        FeedbackListPage()
       }.tabBar(this.tabNavBuilder('反馈', 1, $r('app.media.renwu1'), $r('app.media.renwu2')))
 
       TabContent() {
@@ -130,27 +131,6 @@ struct MinePage {
     .barHeight(65)
     .width('100%')
     .height('100%')
-  }
-}
-
-@Component
-struct FeedbackListTab {
-  build() {
-    Column({ space: 20 }) {
-      Text('反馈中心')
-        .fontSize(22)
-        .fontWeight(FontWeight.Bold)
-        .margin({ top: 40 })
-      Text('您可以在此查看或提交反馈，功能开发中...')
-        .fontSize(14)
-        .fontColor('#666666')
-        .margin({ left: 20, right: 20 })
-    }
-    .width('100%')
-    .height('100%')
-    .alignItems(HorizontalAlign.Center)
-    .justifyContent(FlexAlign.Start)
-    .backgroundColor('#F5F5F5')
   }
 }
 
