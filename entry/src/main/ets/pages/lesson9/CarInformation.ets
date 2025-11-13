@@ -1,4 +1,5 @@
 import { promptAction } from '@kit.ArkUI';
+import router from '@ohos.router';
 
 interface ClimateOption {
   icon: Resource;
@@ -9,10 +10,10 @@ interface ClimateOption {
 @Entry
 @Component
 export struct CarInformationPage {
-  @State isDarkMode: boolean = true;
+  @State isDarkMode: boolean = false;
   @State batteryLevel: number = 88;
   @State range: number = 488;
-  @State climateEnabled: boolean = true;
+  @State climateEnabled: boolean = false;
   @State temperature: number = 22;
   @State selectedClimateMode: string = 'cooling';
 
@@ -73,6 +74,11 @@ export struct CarInformationPage {
         .height(40)
         .backgroundColor(this.isDarkMode ? '#1C1C1E' : '#FFFFFF')
         .shadow({ radius: 2, color: '#1A000000', offsetX: 0, offsetY: 1 })
+        .onClick(() => {
+          router.pushUrl({
+            url: 'pages/lesson9/CarUserInformation'
+          });
+        })
 
         Button(this.isDarkMode ? '浅色模式' : '深色模式', { type: ButtonType.Normal })
           .fontSize(12)

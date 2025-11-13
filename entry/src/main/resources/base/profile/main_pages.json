@@ -9,6 +9,7 @@
     "pages/lesson9/MinePage",
     "pages/lesson9/FeedbackListPage",
     "pages/lesson9/FeedbackDetailPage",
-    "pages/lesson9/CreateFeedbackPage"
+    "pages/lesson9/CreateFeedbackPage",
+    "pages/lesson9/CarUserInformation"
   ]
 }
