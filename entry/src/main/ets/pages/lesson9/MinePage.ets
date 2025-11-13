@@ -4,6 +4,7 @@ import { clearToken, getToken } from '../../util/StorageUtil';
 import { Context } from '@kit.AbilityKit';
 import { HomeContentComp } from './HomeContentComp';
 import { FeedbackListPage } from './FeedbackListPage';
+import { CarInformationPage } from './CarInformation';
 
 @Entry
 @Component
@@ -108,20 +109,24 @@ struct MinePage {
       }.tabBar(this.tabNavBuilder('首页', 0, $r('app.media.shouye1'), $r('app.media.shouye2')))
 
       TabContent() {
-        FeedbackListPage()
-      }.tabBar(this.tabNavBuilder('反馈', 1, $r('app.media.renwu1'), $r('app.media.renwu2')))
+        CarInformationPage()
+      }.tabBar(this.tabNavBuilder('信息', 1, $r('app.media.me1'), $r('app.media.me2')))
 
       TabContent() {
         ResourceTab()
       }.tabBar(this.tabNavBuilder('资源', 2, $r('app.media.ziyuan1'), $r('app.media.ziyuan2')))
 
       TabContent() {
+        FeedbackListPage()
+      }.tabBar(this.tabNavBuilder('反馈', 3, $r('app.media.renwu1'), $r('app.media.renwu2')))
+
+      TabContent() {
         this.personalTab()
-      }.tabBar(this.tabNavBuilder('我的', 3, $r('app.media.me1'), $r('app.media.me2')))
+      }.tabBar(this.tabNavBuilder('我的', 4, $r('app.media.me1'), $r('app.media.me2')))
     }
     .onChange((index: number) => {
       this.currentIndex = index;
-      const tabTitles: string[] = ['首页', '反馈', '资源', '我的'];
+      const tabTitles: string[] = ['首页', '信息', '资源', '反馈', '我的'];
       promptAction.showToast({
         message: `已切换到${tabTitles[index]}`,
         duration: 800
