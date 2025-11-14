@@ -12,6 +12,8 @@ interface UserVehicleInfoResult {
   summaryName: string;
 }
 
+type ClimateAction = 'auto' | 'temperature' | 'fanSpeed' | 'circulate' | 'ac' | 'defog';
+
 interface ClimatePreviousState {
   enabled: boolean;
   temperature: number;
@@ -100,7 +102,7 @@ export struct CarInformationPage {
     }
   }
 
-  private async updateClimateState(autoValue: string, setTemperature?: number, previousState?: ClimatePreviousState) {
+  private async updateClimateState(autoValue: string, setTemperature?: number, previousState?: ClimatePreviousState, action: ClimateAction = 'auto') {
     if (this.climateUpdating) {
       return;
     }
@@ -119,8 +121,8 @@ export struct CarInformationPage {
         throw new Error('未获取到车辆信息，稍后重试');
       }
 
-      const payload = this.buildClimatePayload(autoValue, setTemperature, carVin);
-      console.info(`[Climate][Request] updateClimateState -> payload=${JSON.stringify(payload)}`);
+      const payload = this.buildClimatePayload(autoValue, setTemperature, carVin, action, previousState);
+      console.info(`[Climate][Request] updateClimateState action=${action} -> payload=${JSON.stringify(payload)}`);
       const response = await updateClimateStateRequest(token, payload);
       console.info(`[Climate][Response] updateClimateState -> code=${response.code}, msg=${response.msg ?? ''}`);
       if (response.code !== 200) {
@@ -162,19 +164,20 @@ export struct CarInformationPage {
     }
   }
 
-  private buildClimatePayload(autoValue: string, tempOverride: number | undefined, carVin: string): ClimateStatePayload {
+  private buildClimatePayload(autoValue: string, tempOverride: number | undefined, carVin: string, action: ClimateAction, previousState?: ClimatePreviousState): ClimateStatePayload {
     const temp = tempOverride !== undefined ? tempOverride : this.temperature;
-    return {
+    const normalizedFanLevel = Math.max(this.minFanSpeedLevel, Math.min(this.fanSpeedLevel, this.maxFanSpeedLevel));
+    const payload: ClimateStatePayload = {
       auto: autoValue,
       door: '0',
       light: '0',
-      temperature: temp.toString(),
-      windLevel: this.fanSpeedLevel.toString(),
-      circulate: this.isCirculateOn ? '1' : '0',
-      setTemp: temp.toString(),
-      acBtn: this.isAcOn ? '1' : '0',
-      clearFog: this.isDefogOn ? '1' : '0',
-      fanState: `fan_speed_${this.fanSpeedLevel}`,
+      temperature: '',
+      windLevel: '',
+      circulate: '',
+      setTemp: '',
+      acBtn: '',
+      clearFog: '',
+      fanState: '',
       playMode: '0',
       processMp3: '0',
       mp3Playing: '0',
@@ -182,6 +185,61 @@ export struct CarInformationPage {
       mp4Playing: '0',
       carVin: carVin
     };
+
+    const includeCirculate = action === 'circulate' || (!!previousState && previousState.isCirculateOn !== this.isCirculateOn);
+    if (includeCirculate) {
+      payload.circulate = this.isCirculateOn ? '1' : '0';
+    }
+
+    const includeAc = action === 'ac' || (!!previousState && previousState.isAcOn !== this.isAcOn);
+    if (includeAc) {
+      payload.acBtn = this.isAcOn ? '1' : '0';
+    }
+
+    const includeDefog = action === 'defog' || (!!previousState && previousState.isDefogOn !== this.isDefogOn);
+    if (includeDefog) {
+      payload.clearFog = this.isDefogOn ? '1' : '0';
+    }
+
+    switch (action) {
+      case 'auto':
+        payload.temperature = temp.toString();
+        payload.setTemp = temp.toString();
+        payload.windLevel = normalizedFanLevel.toString();
+        payload.fanState = `fan_speed_${normalizedFanLevel}`;
+        if (!includeCirculate) {
+          payload.circulate = this.isCirculateOn ? '1' : '';
+        }
+        if (!includeAc) {
+          payload.acBtn = this.isAcOn ? '1' : '';
+        }
+        if (!includeDefog) {
+          payload.clearFog = this.isDefogOn ? '1' : '';
+        }
+        break;
+      case 'temperature':
+        payload.temperature = temp.toString();
+        payload.setTemp = temp.toString();
+        break;
+      case 'fanSpeed':
+        payload.windLevel = normalizedFanLevel.toString();
+        payload.fanState = `fan_speed_${normalizedFanLevel}`;
+        break;
+      case 'circulate':
+        payload.circulate = this.isCirculateOn ? '1' : '0';
+        break;
+      case 'ac':
+        payload.acBtn = this.isAcOn ? '1' : '0';
+        break;
+      case 'defog':
+        payload.clearFog = this.isDefogOn ? '1' : '0';
+        break;
+      case 'auto':
+      default:
+        break;
+    }
+
+    return payload;
   }
 
   private getCurrentClimateState(): ClimatePreviousState {
@@ -484,7 +542,12 @@ export struct CarInformationPage {
             }
             console.info(`[Climate] Switch toggled -> value=${value}, previous=${previousState.enabled}`);
             this.climateEnabled = value;
-            await this.updateClimateState(value ? '1' : '0', undefined, previousState);
+            if (!value) {
+              this.isAcOn = false;
+              this.isCirculateOn = false;
+              this.isDefogOn = false;
+            }
+            await this.updateClimateState(value ? '1' : '0', undefined, previousState, 'auto');
             if (this.climateEnabled !== value && !this.climateUpdating) {
               this.climateEnabled = previousState.enabled;
             }
@@ -512,7 +575,7 @@ export struct CarInformationPage {
               const newTemp = this.temperature - 1;
               console.info(`[Climate] Temperature down -> from=${this.temperature} to=${newTemp}`);
               this.temperature = newTemp;
-              void this.updateClimateState(this.climateEnabled ? '1' : '0', newTemp, previousState);
+              void this.updateClimateState(this.climateEnabled ? '1' : '0', newTemp, previousState, 'temperature');
             }
           })
 
@@ -554,7 +617,7 @@ export struct CarInformationPage {
               const newTemp = this.temperature + 1;
               console.info(`[Climate] Temperature up -> from=${this.temperature} to=${newTemp}`);
               this.temperature = newTemp;
-              void this.updateClimateState(this.climateEnabled ? '1' : '0', newTemp, previousState);
+              void this.updateClimateState(this.climateEnabled ? '1' : '0', newTemp, previousState, 'temperature');
             }
           })
         }
@@ -674,7 +737,7 @@ export struct CarInformationPage {
     }
     console.info(`[Climate] Fan speed change -> from=${this.fanSpeedLevel} to=${nextLevel}`);
     this.fanSpeedLevel = nextLevel;
-    void this.updateClimateState('1', undefined, previousState);
+    void this.updateClimateState('1', undefined, previousState, 'fanSpeed');
   }
 
   private handleClimateToggle(mode: 'circulate' | 'ac' | 'defog'): void {
@@ -702,7 +765,7 @@ export struct CarInformationPage {
         break;
     }
 
-    void this.updateClimateState('1', undefined, previousState);
+    void this.updateClimateState('1', undefined, previousState, mode);
   }
 
   @Builder

@@ -5,6 +5,7 @@ import { Context } from '@kit.AbilityKit';
 import { HomeContentComp } from './HomeContentComp';
 import { FeedbackListPage } from './FeedbackListPage';
 import { CarInformationPage } from './CarInformation';
+import { CarControlPage } from './CarControl';
 
 @Entry
 @Component
@@ -113,7 +114,7 @@ struct MinePage {
       }.tabBar(this.tabNavBuilder('信息', 1, $r('app.media.me1'), $r('app.media.me2')))
 
       TabContent() {
-        ResourceTab()
+        CarControlPage()
       }.tabBar(this.tabNavBuilder('资源', 2, $r('app.media.ziyuan1'), $r('app.media.ziyuan2')))
 
       TabContent() {
@@ -136,26 +137,5 @@ struct MinePage {
     .barHeight(65)
     .width('100%')
     .height('100%')
-  }
-}
-
-@Component
-struct ResourceTab {
-  build() {
-    Column({ space: 16 }) {
-      Text('精选资源')
-        .fontSize(22)
-        .fontWeight(FontWeight.Bold)
-        .margin({ top: 40 })
-      Text('这里将展示最新的车型资讯与学习资料，敬请期待。')
-        .fontSize(14)
-        .fontColor('#666666')
-        .margin({ left: 20, right: 20 })
-    }
-    .width('100%')
-    .height('100%')
-    .alignItems(HorizontalAlign.Center)
-    .justifyContent(FlexAlign.Start)
-    .backgroundColor('#F5F5F5')
   }
 }
