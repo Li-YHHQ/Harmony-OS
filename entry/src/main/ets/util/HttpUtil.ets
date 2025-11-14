@@ -56,6 +56,86 @@ export interface FeedbackDetailResponse {
   data?: FeedbackDetailRecord;
 }
 
+export interface VehicleInfoDetail {
+  createBy?: string;
+  createTime?: string | null;
+  updateBy?: string;
+  updateTime?: string;
+  remark?: string | null;
+  params?: Record<string, Object>;
+  id?: string;
+  userId?: string;
+  nickName?: string;
+  carName?: string;
+  brand?: string;
+  carPic?: string;
+  carVin?: string;
+  horsePower?: string;
+  maxPower?: string;
+  maxTorque?: string;
+  carSize?: string;
+  nfc?: string;
+  wheelBase?: string;
+  frontWheelBase?: string;
+  backWheelBase?: string;
+  batteryPower?: string;
+  enduranceMileage?: string;
+  kmh?: string;
+  batteryCode?: string;
+  batteryType?: string | null;
+  batteryCapacity?: string;
+  nominalVoltage?: string;
+  ratedCurrent?: string;
+  workingTemperature?: string;
+  delFlag?: string;
+}
+
+export interface VehicleInfoResponse {
+  msg?: string;
+  code?: number;
+  data?: VehicleInfoDetail;
+}
+
+export interface ClimateStatePayload {
+  auto: string;
+  door: string;
+  light: string;
+  temperature: string;
+  windLevel: string;
+  circulate: string;
+  setTemp: string;
+  acBtn: string;
+  clearFog: string;
+  fanState: string;
+  playMode: string;
+  processMp3: string;
+  mp3Playing: string;
+  processMp4: string;
+  mp4Playing: string;
+  carVin: string;
+}
+
+export interface CarOperationLogRecord {
+  createBy?: string;
+  createTime?: string;
+  updateBy?: string;
+  updateTime?: string;
+  id: string;
+  userId?: string;
+  userName?: string;
+  carId?: string;
+  carName?: string;
+  operaType?: string;
+  operaContent?: string;
+}
+
+export interface CarOperationLogListResponse {
+  total?: number;
+  rows?: CarOperationLogRecord[];
+  code?: number;
+  msg?: string;
+}
+
 export interface CreateFeedbackPayload {
   id: number;
   userId: number;
@@ -111,6 +191,127 @@ export async function loginRequest(username: string, password: string): Promise<
         resolve(response);
       } catch (parseErr) {
         console.error(`解析响应数据失败: ${JSON.stringify(parseErr)}`);
+        reject(parseErr);
+      }
+    });
+  });
+}
+
+export interface CarOperationLogQueryParams {
+  pageNum: number;
+  pageSize: number;
+  operaContent?: string;
+  orderByColumn?: string;
+  isAsc?: string;
+}
+
+export async function getCarOperationLogListRequest(token: string, params: CarOperationLogQueryParams): Promise<CarOperationLogListResponse> {
+  return new Promise<CarOperationLogListResponse>((resolve, reject) => {
+    const httpRequest = http.createHttp();
+    const queryParts: string[] = [];
+    queryParts.push(`pageNum=${encodeURIComponent(params.pageNum)}`);
+    queryParts.push(`pageSize=${encodeURIComponent(params.pageSize)}`);
+    if (params.operaContent !== undefined) {
+      queryParts.push(`operaContent=${encodeURIComponent(params.operaContent)}`);
+    }
+    if (params.orderByColumn !== undefined) {
+      queryParts.push(`orderByColumn=${encodeURIComponent(params.orderByColumn)}`);
+    }
+    if (params.isAsc !== undefined) {
+      queryParts.push(`isAsc=${encodeURIComponent(params.isAsc)}`);
+    }
+    const query = queryParts.join('&');
+    const url = `${BASE_URL}/cockpit/log/list?${query}`;
+
+    httpRequest.request(url, {
+      method: http.RequestMethod.GET,
+      header: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      connectTimeout: 10000,
+      readTimeout: 10000
+    }, (err, data) => {
+      httpRequest.destroy();
+
+      if (err) {
+        console.error(`获取车辆操控日志列表失败: ${JSON.stringify(err)}`);
+        reject(err);
+        return;
+      }
+
+      try {
+        const response = JSON.parse(data.result as string) as CarOperationLogListResponse;
+        resolve(response);
+      } catch (parseErr) {
+        console.error(`解析车辆操控日志列表失败: ${JSON.stringify(parseErr)}`);
+        reject(parseErr);
+      }
+    });
+  });
+}
+
+export async function deleteCarOperationLogRequest(token: string, id: string | number): Promise<CommonResponse> {
+  return new Promise<CommonResponse>((resolve, reject) => {
+    const httpRequest = http.createHttp();
+    const url = `${BASE_URL}/cockpit/log/${id}`;
+
+    httpRequest.request(url, {
+      method: http.RequestMethod.DELETE,
+      header: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      connectTimeout: 10000,
+      readTimeout: 10000
+    }, (err, data) => {
+      httpRequest.destroy();
+
+      if (err) {
+        console.error(`删除车辆操控日志失败: ${JSON.stringify(err)}`);
+        reject(err);
+        return;
+      }
+
+      try {
+        const response = JSON.parse(data.result as string) as CommonResponse;
+        resolve(response);
+      } catch (parseErr) {
+        console.error(`解析删除车辆操控日志响应失败: ${JSON.stringify(parseErr)}`);
+        reject(parseErr);
+      }
+    });
+  });
+}
+
+export async function updateClimateStateRequest(token: string, payload: ClimateStatePayload): Promise<CommonResponse> {
+  return new Promise<CommonResponse>((resolve, reject) => {
+    const httpRequest = http.createHttp();
+    const url = `${BASE_URL}/cockpit/state`;
+
+    httpRequest.request(url, {
+      method: http.RequestMethod.PUT,
+      header: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      extraData: JSON.stringify(payload),
+      connectTimeout: 10000,
+      readTimeout: 10000
+    }, (err, data) => {
+      httpRequest.destroy();
+
+      if (err) {
+        console.error(`更新空调状态失败: ${JSON.stringify(err)}`);
+        reject(err);
+        return;
+      }
+
+      try {
+        const response = JSON.parse(data.result as string) as CommonResponse;
+        resolve(response);
+      } catch (parseErr) {
+        console.error(`解析空调状态更新响应失败: ${JSON.stringify(parseErr)}`);
         reject(parseErr);
       }
     });
@@ -177,6 +378,39 @@ export async function getFeedbackDetailRequest(token: string, id: string | numbe
         resolve(response);
       } catch (parseErr) {
         console.error(`解析反馈详情数据失败: ${JSON.stringify(parseErr)}`);
+        reject(parseErr);
+      }
+    });
+  });
+}
+
+export async function getVehicleInfoDetailRequest(token: string, id: string | number): Promise<VehicleInfoResponse> {
+  return new Promise<VehicleInfoResponse>((resolve, reject) => {
+    const httpRequest = http.createHttp();
+    const url = `${BASE_URL}/cockpit/info/${id}`;
+
+    httpRequest.request(url, {
+      method: http.RequestMethod.GET,
+      header: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      connectTimeout: 10000,
+      readTimeout: 10000
+    }, (err, data) => {
+      httpRequest.destroy();
+
+      if (err) {
+        console.error(`获取车辆信息详情失败: ${JSON.stringify(err)}`);
+        reject(err);
+        return;
+      }
+
+      try {
+        const response = JSON.parse(data.result as string) as VehicleInfoResponse;
+        resolve(response);
+      } catch (parseErr) {
+        console.error(`解析车辆信息详情数据失败: ${JSON.stringify(parseErr)}`);
         reject(parseErr);
       }
     });

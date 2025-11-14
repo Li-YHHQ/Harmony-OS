@@ -24,6 +24,7 @@ export interface UserInfo {
 export class UserInfoResponse {
   msg?: string;
   code?: number;
+  carId?: string;
   carVin?: string;  // 车架号（关键字段：判断绑定状态）
   permissions?: string[];
   roles?: string[];
