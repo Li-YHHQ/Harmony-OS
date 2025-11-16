@@ -9,6 +9,16 @@ import { UserInfoResponse } from '../model/UserInfo';
  */
 const BASE_URL = 'http://121.36.14.143:10001';
 
+export interface ControlDoorPayload {
+  carId: string;
+  door: string;
+}
+
+export interface ControlLightPayload {
+  carId: string;
+  light: string;
+}
+
 export interface FeedbackRecord {
   createBy?: string;
   createTime?: string;
@@ -195,6 +205,127 @@ export async function loginRequest(username: string, password: string): Promise<
       }
     });
   });
+}
+
+export async function controlDoorRequest(token: string, payload: ControlDoorPayload): Promise<CommonResponse> {
+  return new Promise<CommonResponse>((resolve, reject) => {
+    const httpRequest = http.createHttp();
+    const url = `${BASE_URL}/cockpit/control/door`;
+
+    httpRequest.request(url, {
+      method: http.RequestMethod.POST,
+      header: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      extraData: JSON.stringify(payload),
+      connectTimeout: 10000,
+      readTimeout: 10000
+    }, (err, data) => {
+      httpRequest.destroy();
+
+      if (err) {
+        console.error(`[CarControl][Door] 请求失败 -> ${JSON.stringify(err)}`);
+        reject(err);
+        return;
+      }
+
+      try {
+        const response = JSON.parse(data.result as string) as CommonResponse;
+        resolve(response);
+      } catch (parseErr) {
+        console.error(`[CarControl][Door] 解析响应失败 -> ${JSON.stringify(parseErr)}`);
+        reject(parseErr);
+      }
+    });
+  });
+}
+
+export async function controlLightRequest(token: string, payload: ControlLightPayload): Promise<CommonResponse> {
+  return new Promise<CommonResponse>((resolve, reject) => {
+    const httpRequest = http.createHttp();
+    const url = `${BASE_URL}/cockpit/control/light`;
+
+    httpRequest.request(url, {
+      method: http.RequestMethod.POST,
+      header: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      extraData: JSON.stringify(payload),
+      connectTimeout: 10000,
+      readTimeout: 10000
+    }, (err, data) => {
+      httpRequest.destroy();
+
+      if (err) {
+        console.error(`[CarControl][Light] 请求失败 -> ${JSON.stringify(err)}`);
+        reject(err);
+        return;
+      }
+
+      try {
+        const response = JSON.parse(data.result as string) as CommonResponse;
+        resolve(response);
+      } catch (parseErr) {
+        console.error(`[CarControl][Light] 解析响应失败 -> ${JSON.stringify(parseErr)}`);
+        reject(parseErr);
+      }
+    });
+  });
+}
+
+async function sendCarCommandWithoutBody(token: string, endpoint: string, logLabel: string): Promise<CommonResponse> {
+  return new Promise<CommonResponse>((resolve, reject) => {
+    const httpRequest = http.createHttp();
+    const url = `${BASE_URL}${endpoint}`;
+
+    httpRequest.request(url, {
+      method: http.RequestMethod.POST,
+      header: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      connectTimeout: 10000,
+      readTimeout: 10000
+    }, (err, data) => {
+      httpRequest.destroy();
+
+      if (err) {
+        console.error(`[CarControl][${logLabel}] 请求失败 -> ${JSON.stringify(err)}`);
+        reject(err);
+        return;
+      }
+
+      try {
+        const response = JSON.parse(data.result as string) as CommonResponse;
+        resolve(response);
+      } catch (parseErr) {
+        console.error(`[CarControl][${logLabel}] 解析响应失败 -> ${JSON.stringify(parseErr)}`);
+        reject(parseErr);
+      }
+    });
+  });
+}
+
+export async function controlMoveRequest(token: string, carId: string): Promise<CommonResponse> {
+  return sendCarCommandWithoutBody(token, `/cockpit/control/move/${carId}`, 'Move');
+}
+
+export async function controlBackRequest(token: string, carId: string): Promise<CommonResponse> {
+  return sendCarCommandWithoutBody(token, `/cockpit/control/back/${carId}`, 'Back');
+}
+
+export async function controlLeftRequest(token: string, carId: string): Promise<CommonResponse> {
+  return sendCarCommandWithoutBody(token, `/cockpit/control/left/${carId}`, 'Left');
+}
+
+export async function controlRightRequest(token: string, carId: string): Promise<CommonResponse> {
+  return sendCarCommandWithoutBody(token, `/cockpit/control/right/${carId}`, 'Right');
+}
+
+export async function controlStopRequest(token: string, carId: string): Promise<CommonResponse> {
+  return sendCarCommandWithoutBody(token, `/cockpit/control/stop/${carId}`, 'Stop');
 }
 
 export interface CarOperationLogQueryParams {

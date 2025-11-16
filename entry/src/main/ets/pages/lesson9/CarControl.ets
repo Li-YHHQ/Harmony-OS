@@ -1,12 +1,42 @@
+import { promptAction } from '@kit.ArkUI';
+import { Context } from '@kit.AbilityKit';
+import { getToken } from '../../util/StorageUtil';
+import {
+  controlBackRequest,
+  controlDoorRequest,
+  ControlDoorPayload,
+  controlLeftRequest,
+  controlLightRequest,
+  ControlLightPayload,
+  controlMoveRequest,
+  controlRightRequest,
+  controlStopRequest,
+  getUserInfoRequest
+} from '../../util/HttpUtil';
+import { UserInfoResponse } from '../../model/UserInfo';
+import { CommonResponse } from '../../model/CommonResponse';
+
 interface BasicTouchEvent {
   type: number;
 }
+
+interface CarControlErrorObject {
+  message?: string;
+}
+
+declare function getContext(component: Object): Context;
+
+type CarControlError = Error | CarControlErrorObject | string;
 
 @Component
 export struct CarControlPage {
   @State doorState: boolean = false;
   @State lightState: boolean = false;
   @State currentDirection: string = '';
+  private carId: string | undefined = undefined;
+  private isDoorUpdating: boolean = false;
+  private isLightUpdating: boolean = false;
+  private isDirectionUpdating: boolean = false;
 
   build() {
     Column() {
@@ -196,26 +226,212 @@ export struct CarControlPage {
     }
   }
 
-  private toggleLightState(): void {
+  private async ensureCarId(): Promise<string> {
+    if (this.carId) {
+      return this.carId;
+    }
+
+    const context = getContext(this) as Context;
+    const token = await getToken(context);
+    if (!token) {
+      throw new Error('请先登录后操作车辆控制');
+    }
+
+    const response = await getUserInfoRequest(token);
+    if (!response || response.code !== 200) {
+      throw new Error(response?.msg ?? '获取用户信息失败');
+    }
+
+    const resolvedId = this.resolveCarId(response);
+    if (!resolvedId) {
+      throw new Error('未绑定车辆，请先绑定车辆');
+    }
+
+    this.carId = resolvedId;
+    return resolvedId;
+  }
+
+  private resolveCarId(response: UserInfoResponse): string | undefined {
+    if (response.carId !== undefined && response.carId !== null) {
+      return this.sanitizeCarId(response.carId);
+    }
+
+    const user = response.user;
+    if (user && user.carId !== undefined && user.carId !== null) {
+      return this.sanitizeCarId(user.carId);
+    }
+
+    return undefined;
+  }
+
+  private sanitizeCarId(carIdValue: string | number | undefined): string | undefined {
+    if (carIdValue === undefined || carIdValue === null) {
+      return undefined;
+    }
+
+    const text = String(carIdValue).trim();
+    if (!text || text === 'null' || text === 'undefined') {
+      return undefined;
+    }
+
+    return text;
+  }
+
+  private async toggleLightState(): Promise<void> {
+    if (this.isLightUpdating) {
+      return;
+    }
+
+    const previousState = this.lightState;
     this.lightState = !this.lightState;
+
+    try {
+      this.isLightUpdating = true;
+      const context = getContext(this) as Context;
+      const token = await getToken(context);
+      if (!token) {
+        throw new Error('请先登录后操作车灯');
+      }
+
+      const carId = await this.ensureCarId();
+      const payload: ControlLightPayload = {
+        carId: carId,
+        light: this.lightState ? '1' : '0'
+      };
+      const response = await controlLightRequest(token, payload);
+      if (response.code !== 200) {
+        throw new Error(response.msg ?? '车灯操作失败');
+      }
+      promptAction.showToast({ message: this.lightState ? '车灯已开启' : '车灯已关闭', duration: 1500 });
+    } catch (error) {
+      console.error(`[CarControl] Light toggle failed -> ${JSON.stringify(error)}`);
+      this.lightState = previousState;
+      const message = this.resolveErrorMessage(error as CarControlError, '车灯操作失败');
+      promptAction.showToast({ message, duration: 2000 });
+    } finally {
+      this.isLightUpdating = false;
+    }
   }
 
-  private toggleDoorState(): void {
+  private async toggleDoorState(): Promise<void> {
+    if (this.isDoorUpdating) {
+      return;
+    }
+
+    const previousState = this.doorState;
     this.doorState = !this.doorState;
+
+    try {
+      this.isDoorUpdating = true;
+      const context = getContext(this) as Context;
+      const token = await getToken(context);
+      if (!token) {
+        throw new Error('请先登录后操作车门');
+      }
+
+      const carId = await this.ensureCarId();
+      const payload: ControlDoorPayload = {
+        carId: carId,
+        door: this.doorState ? '1' : '0'
+      };
+      const response = await controlDoorRequest(token, payload);
+      if (response.code !== 200) {
+        throw new Error(response.msg ?? '车门操作失败');
+      }
+      promptAction.showToast({ message: this.doorState ? '车门已开启' : '车门已关闭', duration: 1500 });
+    } catch (error) {
+      console.error(`[CarControl] Door toggle failed -> ${JSON.stringify(error)}`);
+      this.doorState = previousState;
+      const message = this.resolveErrorMessage(error as CarControlError, '车门操作失败');
+      promptAction.showToast({ message, duration: 2000 });
+    } finally {
+      this.isDoorUpdating = false;
+    }
   }
 
-  private handleDirectionTouch(event: BasicTouchEvent, direction: string): void {
+  private resolveErrorMessage(error: CarControlError, fallback: string): string {
+    if (typeof error === 'string') {
+      return error;
+    }
+
+    if (error instanceof Error) {
+      return error.message || fallback;
+    }
+
+    if (error && typeof error.message === 'string') {
+      return error.message;
+    }
+
+    return fallback;
+  }
+
+  private async handleDirectionTouch(event: BasicTouchEvent, direction: string): Promise<void> {
     const eventType = event?.type;
     if (eventType === undefined) {
       return;
     }
 
     if (eventType === 0) { // Touch down
-      this.currentDirection = direction;
+      void this.sendDirectionCommand(direction, true);
     } else if (eventType === 1 || eventType === 3) { // Touch up or cancel
-      if (this.currentDirection === direction) {
-        this.currentDirection = '';
+      void this.sendDirectionCommand(direction, false);
+    }
+  }
+
+  private async sendDirectionCommand(direction: string, isPress: boolean): Promise<void> {
+    if (this.isDirectionUpdating) {
+      return;
+    }
+
+    try {
+      this.isDirectionUpdating = true;
+      const context = getContext(this) as Context;
+      const token = await getToken(context);
+      if (!token) {
+        throw new Error('请先登录后操作方向控制');
       }
+
+      const carId = await this.ensureCarId();
+
+      if (isPress) {
+        this.currentDirection = direction;
+        let response: CommonResponse | undefined;
+        switch (direction) {
+          case 'up':
+            response = await controlMoveRequest(token, carId);
+            break;
+          case 'down':
+            response = await controlBackRequest(token, carId);
+            break;
+          case 'left':
+            response = await controlLeftRequest(token, carId);
+            break;
+          case 'right':
+            response = await controlRightRequest(token, carId);
+            break;
+          default:
+            response = undefined;
+            break;
+        }
+
+        if (response && response.code !== 200) {
+          throw new Error(response.msg ?? '方向操作失败');
+        }
+      } else {
+        if (this.currentDirection === direction) {
+          this.currentDirection = '';
+        }
+        const response = await controlStopRequest(token, carId);
+        if (response.code !== 200) {
+          throw new Error(response.msg ?? '车辆停止失败');
+        }
+      }
+    } catch (error) {
+      console.error(`[CarControl] Direction command failed -> ${JSON.stringify(error)}`);
+      const message = this.resolveErrorMessage(error as CarControlError, '方向控制失败');
+      promptAction.showToast({ message, duration: 2000 });
+    } finally {
+      this.isDirectionUpdating = false;
     }
   }
 }
