@@ -139,6 +139,20 @@ struct MinePage {
               });
             })
 
+          // AI 助手
+          Button('AI 助手')
+            .width('90%')
+            .height(44)
+            .borderRadius(22)
+            .fontSize(16)
+            .backgroundColor('#22C55E')
+            .fontColor('#FFFFFF')
+            .onClick(() => {
+              router.pushUrl({
+                url: 'pages/lesson9/AIAssistantPage'
+              });
+            })
+
           // 绑定车架号
           Button('绑定车架号')
             .width('90%')

@@ -8,6 +8,9 @@ import { UserInfoResponse } from '../model/UserInfo';
  * 提供登录和注册等网络请求功能
  */
 const BASE_URL = 'http://121.36.14.143:10001';
+const AI_BASE_URL = 'https://dashscope.aliyuncs.com';
+const AI_MODEL_NAME = 'deepseek-r1-distill-llama-8b';
+const AI_API_KEY = 'sk-a90b9f39e04848d5b8344b20791e326e';
 
 export interface ControlDoorPayload {
   carId: string;
@@ -125,6 +128,49 @@ export interface ClimateStatePayload {
   carVin: string;
 }
 
+export interface AIChatMessage {
+  role: string;
+  content: string;
+}
+
+export interface AIChatResponseChoiceMessage {
+  role?: string;
+  content?: string;
+  reasoning_content?: string;
+}
+
+export interface AIChatResponseChoice {
+  message?: AIChatResponseChoiceMessage;
+  finish_reason?: string;
+}
+
+export interface AIChatResponseOutput {
+  choices?: AIChatResponseChoice[];
+}
+
+export interface AIChatResponse {
+  output?: AIChatResponseOutput;
+  usage?: Record<string, Object>;
+  request_id?: string;
+  code?: string | number;
+  message?: string;
+  msg?: string;
+}
+
+export interface AIChatRequestInput {
+  messages: AIChatMessage[];
+}
+
+export interface AIChatRequestParameters {
+  result_format: string;
+}
+
+export interface AIChatRequestBody {
+  model: string;
+  input: AIChatRequestInput;
+  parameters: AIChatRequestParameters;
+}
+
 export interface CarOperationLogRecord {
   createBy?: string;
   createTime?: string;
@@ -201,6 +247,71 @@ export async function loginRequest(username: string, password: string): Promise<
         resolve(response);
       } catch (parseErr) {
         console.error(`解析响应数据失败: ${JSON.stringify(parseErr)}`);
+        reject(parseErr);
+      }
+    });
+  });
+}
+
+export async function aiChatRequest(messages: AIChatMessage[]): Promise<string> {
+  if (!AI_API_KEY || AI_API_KEY.trim().length === 0) {
+    throw new Error('AI 接口未配置密钥，请在 HttpUtil.ets 中设置 AI_API_KEY');
+  }
+
+  return new Promise<string>((resolve, reject) => {
+    const httpRequest = http.createHttp();
+    const url = `${AI_BASE_URL}/api/v1/services/aigc/text-generation/generation`;
+
+    const body: AIChatRequestBody = {
+      model: AI_MODEL_NAME,
+      input: {
+        messages: messages
+      },
+      parameters: {
+        result_format: 'message'
+      }
+    };
+
+    httpRequest.request(url, {
+      method: http.RequestMethod.POST,
+      header: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${AI_API_KEY}`
+      },
+      extraData: JSON.stringify(body),
+      connectTimeout: 15000,
+      readTimeout: 30000
+    }, (err, data) => {
+      httpRequest.destroy();
+
+      if (err) {
+        console.error(`AI 聊天请求失败: ${JSON.stringify(err)}`);
+        reject(err);
+        return;
+      }
+
+      try {
+        const text = data.result as string;
+        const response = JSON.parse(text) as AIChatResponse;
+
+        if (response.code && response.code !== 200 && response.code !== '200') {
+          const message = response.message ?? response.msg ?? 'AI 接口返回错误';
+          throw new Error(message);
+        }
+
+        const choices = response.output?.choices;
+        if (!choices || choices.length === 0 || !choices[0].message) {
+          throw new Error('AI 接口未返回内容');
+        }
+
+        const content = choices[0].message?.content ?? '';
+        if (!content) {
+          throw new Error('AI 回复内容为空');
+        }
+
+        resolve(content);
+      } catch (parseErr) {
+        console.error(`解析 AI 聊天响应失败: ${JSON.stringify(parseErr)}`);
         reject(parseErr);
       }
     });
