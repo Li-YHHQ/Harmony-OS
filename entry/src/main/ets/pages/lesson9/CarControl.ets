@@ -30,6 +30,7 @@ type CarControlError = Error | CarControlErrorObject | string;
 
 @Component
 export struct CarControlPage {
+  @Prop isDarkMode: boolean = false;
   @State doorState: boolean = false;
   @State lightState: boolean = false;
   @State currentDirection: string = '';
@@ -49,7 +50,7 @@ export struct CarControlPage {
 
         Text(`车门:${this.doorState ? '开' : '关'}, 车灯:${this.lightState ? '开' : '关'}`)
           .fontSize(15)
-          .fontColor('#333333');
+          .fontColor(this.isDarkMode ? '#E5E7EB' : '#333333');
       }
       .width('100%')
       .padding({ top: 12, bottom: 20, left: 12, right: 12 })
@@ -65,7 +66,7 @@ export struct CarControlPage {
 
             Text(this.lightState ? '车灯开' : '车灯关')
               .fontSize(10)
-              .fontColor(this.lightState ? '#4A90E2' : '#333333')
+              .fontColor(this.lightState ? '#4A90E2' : (this.isDarkMode ? '#E5E7EB' : '#333333'))
               .margin({ top: 4 });
           }
           .alignItems(HorizontalAlign.Center)
@@ -83,7 +84,7 @@ export struct CarControlPage {
           Text('方向控制')
             .fontSize(16)
             .fontWeight(FontWeight.Bold)
-            .fontColor('#000000');
+            .fontColor(this.isDarkMode ? '#F9FAFB' : '#000000');
 
           Column() {
             Image(this.doorState ? $r('app.media.card_k') : $r('app.media.card_g'))
@@ -93,7 +94,7 @@ export struct CarControlPage {
 
             Text(this.doorState ? '车门开' : '车门关')
               .fontSize(10)
-              .fontColor(this.doorState ? '#4A90E2' : '#333333')
+              .fontColor(this.doorState ? '#4A90E2' : (this.isDarkMode ? '#E5E7EB' : '#333333'))
               .margin({ top: 4 });
           }
           .alignItems(HorizontalAlign.Center)
@@ -204,14 +205,14 @@ export struct CarControlPage {
       .margin({ top: 12, bottom: 16 })
       .alignItems(HorizontalAlign.Center)
       .padding(20)
-      .backgroundColor('#FFFFFF')
+      .backgroundColor(this.isDarkMode ? '#0F172A' : '#FFFFFF')
       .borderRadius(15)
       .shadow({ radius: 6, color: '#1A000000', offsetX: 2, offsetY: 2 });
     }
     .width('100%')
     .height('100%')
     .padding({ top: 4, bottom: 12, left: 12, right: 12 })
-    .backgroundColor('#F5F5F5');
+    .backgroundColor(this.isDarkMode ? '#020617' : '#F5F5F5');
   }
 
   private getCarImage(): Resource {

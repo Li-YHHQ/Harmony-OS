@@ -7,6 +7,7 @@ import { Context } from '@kit.AbilityKit';
  */
 const PREFERENCE_NAME = 'user_preferences';
 const TOKEN_KEY = 'user_token';
+const DARK_MODE_KEY = 'dark_mode_enabled';
 
 /**
  * 保存token到本地存储
@@ -28,6 +29,37 @@ export async function saveToken(context: Context, token: string): Promise<void> 
       }
     }
     throw new Error(errorMessage);
+  }
+}
+
+/**
+ * 保存深色模式开关到本地
+ * @param context 应用上下文
+ * @param enabled 是否启用深色模式
+ */
+export async function saveDarkMode(context: Context, enabled: boolean): Promise<void> {
+  try {
+    const dataPreferences = await preferences.getPreferences(context, PREFERENCE_NAME);
+    await dataPreferences.put(DARK_MODE_KEY, enabled ? '1' : '0');
+    await dataPreferences.flush();
+  } catch (err) {
+    console.error(`保存深色模式状态失败: ${JSON.stringify(err)}`);
+  }
+}
+
+/**
+ * 从本地获取深色模式开关
+ * @param context 应用上下文
+ * @returns 是否启用深色模式
+ */
+export async function getDarkMode(context: Context): Promise<boolean> {
+  try {
+    const dataPreferences = await preferences.getPreferences(context, PREFERENCE_NAME);
+    const value = await dataPreferences.get(DARK_MODE_KEY, '0');
+    return value === '1';
+  } catch (err) {
+    console.error(`获取深色模式状态失败: ${JSON.stringify(err)}`);
+    return false;
   }
 }
 

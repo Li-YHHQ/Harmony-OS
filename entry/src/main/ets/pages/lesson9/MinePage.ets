@@ -1,21 +1,51 @@
 import { promptAction } from '@kit.ArkUI';
 import router from '@ohos.router';
-import { clearToken, getToken } from '../../util/StorageUtil';
+import { clearToken, getToken, getDarkMode, saveDarkMode } from '../../util/StorageUtil';
 import { Context } from '@kit.AbilityKit';
 import { HomeContentComp } from './HomeContentComp';
 import { FeedbackListPage } from './FeedbackListPage';
 import { CarInformationPage } from './CarInformation';
 import { CarControlPage } from './CarControl';
+import { getUserInfoRequest } from '../../util/HttpUtil';
+import { UserInfoResponse, UserInfo } from '../../model/UserInfo';
 
 @Entry
 @Component
 struct MinePage {
   @State token: string = '';
   @State currentIndex: number = 0;
+  @State userName: string = '';
+  @State isDarkMode: boolean = false;
 
   async aboutToAppear() {
     const context = getContext(this) as Context;
     this.token = await getToken(context);
+    console.info(`[MinePage] current token = ${this.token}`);
+    if (this.token && this.token.length > 0) {
+      await this.loadUserName(this.token);
+    }
+    this.isDarkMode = await getDarkMode(context);
+  }
+
+  private async loadUserName(token: string) {
+    try {
+      const response: UserInfoResponse = await getUserInfoRequest(token);
+      if (!response || response.code !== 200) {
+        return;
+      }
+
+      const user: UserInfo | undefined = response.user;
+      if (!user) {
+        return;
+      }
+
+      const nickName = user.nickName ?? '';
+      const userName = user.userName ?? '';
+      const display = (nickName && nickName.length > 0) ? nickName : (userName && userName.length > 0 ? userName : '已登录用户');
+      this.userName = display;
+    } catch (err) {
+      console.error(`加载用户信息失败: ${JSON.stringify(err)}`);
+    }
   }
 
   @Builder
@@ -35,49 +65,137 @@ struct MinePage {
   @Builder
   personalTab() {
     Column() {
-      Text('我的页面')
-        .fontSize(24)
-        .fontWeight(FontWeight.Bold)
-        .margin({ top: 50, bottom: 30 })
+      // 顶部标题
+      Row() {
+        Text('我的')
+          .fontSize(24)
+          .fontWeight(FontWeight.Bold)
+          .fontColor('#111111')
+      }
+        .width('100%')
+        .height(60)
+        .padding({ left: 24, right: 24, top: 24 })
+        .justifyContent(FlexAlign.Start)
+        .alignItems(VerticalAlign.Center)
 
+      // 个人信息卡片
+      Column() {
+        Row() {
+          // 头像
+          Image($r('app.media.User'))
+            .width(54)
+            .height(54)
+            .borderRadius(27)
+            .objectFit(ImageFit.Cover)
+
+          Column({ space: 4 }) {
+            Text(this.token ? (this.userName || '已登录用户') : '未登录')
+              .fontSize(18)
+              .fontWeight(FontWeight.Medium)
+              .fontColor('#222222')
+
+            Text(this.token ? '点击下方功能进行车辆绑定或退出登录' : '请先登录后再进行车辆绑定操作')
+              .fontSize(12)
+              .fontColor('#888888')
+              .maxLines(2)
+          }
+          .margin({ left: 12 })
+        }
+        .width('100%')
+        .alignItems(VerticalAlign.Center)
+
+        if (this.token) {
+          Text(`Token: ${this.token.substring(0, 20)}...`)
+            .fontSize(11)
+            .fontColor('#BBBBBB')
+            .margin({ top: 10 })
+        }
+      }
+      .width('90%')
+      .padding({ top: 18, bottom: 18, left: 16, right: 16 })
+      .margin({ top: 12, bottom: 24 })
+      .backgroundColor('#FFFFFF')
+      .borderRadius(16)
+      .shadow({ radius: 8, color: '#14000000', offsetX: 0, offsetY: 4 })
+
+      // 功能区域
       if (this.token) {
-        Text(`Token: ${this.token.substring(0, 20)}...`)
-          .fontSize(14)
-          .fontColor('#666666')
-          .margin({ bottom: 20 })
+        Column({ space: 12 }) {
+          // 深色模式切换
+          Button(this.isDarkMode ? '切换为浅色模式' : '切换为深色模式')
+            .width('90%')
+            .height(44)
+            .borderRadius(22)
+            .fontSize(14)
+            .backgroundColor(this.isDarkMode ? '#4B5563' : '#111827')
+            .fontColor('#FFFFFF')
+            .onClick(async () => {
+              const context = getContext(this) as Context;
+              this.isDarkMode = !this.isDarkMode;
+              await saveDarkMode(context, this.isDarkMode);
+              promptAction.showToast({
+                message: this.isDarkMode ? '已开启深色模式' : '已关闭深色模式',
+                duration: 1500
+              });
+            })
 
-        Button('退出登录')
-          .width('80%')
-          .height(45)
-          .borderRadius(10)
-          .fontSize(16)
-          .backgroundColor('#FF3B30')
-          .onClick(() => {
-            this.handleLogout();
-          })
+          // 绑定车架号
+          Button('绑定车架号')
+            .width('90%')
+            .height(44)
+            .borderRadius(22)
+            .fontSize(16)
+            .backgroundColor('#0A59F7')
+            .fontColor('#FFFFFF')
+            .onClick(() => {
+              router.pushUrl({
+                url: 'pages/lesson9/VehicleBindPage'
+              });
+            })
+
+          // 退出登录
+          Button('退出登录')
+            .width('90%')
+            .height(44)
+            .borderRadius(22)
+            .fontSize(16)
+            .backgroundColor('#FF3B30')
+            .fontColor('#FFFFFF')
+            .onClick(() => {
+              this.handleLogout();
+            })
+        }
+        .width('100%')
+        .alignItems(HorizontalAlign.Center)
       } else {
-        Text('当前未登录，请先登录账号')
-          .fontSize(16)
-          .fontColor('#666666')
-          .margin({ bottom: 20 })
-        Button('去登录')
-          .width('80%')
-          .height(45)
-          .borderRadius(10)
-          .fontSize(16)
-          .backgroundColor('#0A59F7')
-          .onClick(() => {
-            router.pushUrl({
-              url: 'pages/lesson9/LoginPage_opt'
-            });
-          })
+        Column({ space: 16 }) {
+          Text('当前未登录，请先登录账号')
+            .fontSize(16)
+            .fontColor('#666666')
+
+          Button('去登录')
+            .width('90%')
+            .height(44)
+            .borderRadius(22)
+            .fontSize(16)
+            .backgroundColor('#0A59F7')
+            .fontColor('#FFFFFF')
+            .onClick(() => {
+              router.pushUrl({
+                url: 'pages/lesson9/LoginPage_opt'
+              });
+            })
+        }
+        .width('100%')
+        .alignItems(HorizontalAlign.Center)
+        .margin({ top: 12 })
       }
     }
     .width('100%')
     .height('100%')
     .justifyContent(FlexAlign.Start)
     .alignItems(HorizontalAlign.Center)
-    .backgroundColor('#F5F5F5')
+    .backgroundColor(this.isDarkMode ? '#101622' : '#F5F5F5')
   }
 
   private async handleLogout() {
@@ -106,19 +224,19 @@ struct MinePage {
   build() {
     Tabs({ barPosition: BarPosition.End, index: this.currentIndex }) {
       TabContent() {
-        HomeContentComp()
+        HomeContentComp({ isDarkMode: this.isDarkMode })
       }.tabBar(this.tabNavBuilder('首页', 0, $r('app.media.shouye1'), $r('app.media.shouye2')))
 
       TabContent() {
-        CarInformationPage()
+        CarInformationPage({ isDarkMode: this.isDarkMode })
       }.tabBar(this.tabNavBuilder('信息', 1, $r('app.media.me1'), $r('app.media.me2')))
 
       TabContent() {
-        CarControlPage()
+        CarControlPage({ isDarkMode: this.isDarkMode })
       }.tabBar(this.tabNavBuilder('资源', 2, $r('app.media.ziyuan1'), $r('app.media.ziyuan2')))
 
       TabContent() {
-        FeedbackListPage()
+        FeedbackListPage({ isDarkMode: this.isDarkMode })
       }.tabBar(this.tabNavBuilder('反馈', 3, $r('app.media.renwu1'), $r('app.media.renwu2')))
 
       TabContent() {
@@ -133,7 +251,7 @@ struct MinePage {
         duration: 800
       });
     })
-    .backgroundColor('#F5F5F5')
+    .backgroundColor(this.isDarkMode ? '#020617' : '#F5F5F5')
     .barHeight(65)
     .width('100%')
     .height('100%')

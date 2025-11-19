@@ -8,14 +8,17 @@ interface IResourceData {
 @Preview
 @Component
 export struct HomeContentComp {
+  @Prop isDarkMode: boolean = false;
+
   build() {
     Scroll() {
       Column({ space: 20 }) {
         SwiperArea()
-        RecommendCourse()
-        ExcellentListComp()
+        RecommendCourse({ isDarkMode: this.isDarkMode })
+        ExcellentListComp({ isDarkMode: this.isDarkMode })
       }
-    }.scrollBar(BarState.Off)
+    }
+    .scrollBar(BarState.Off)
   }
 }
 
@@ -66,6 +69,7 @@ struct SwiperArea {
 
 @Component
 struct RecommendCourse {
+  @Prop isDarkMode: boolean = false;
   @State currentScrollIndex: number = 0
 
   build() {
@@ -96,7 +100,7 @@ struct RecommendCourse {
           }
           .width(150)
           .padding(12)
-          .backgroundColor(Color.White)
+          .backgroundColor(this.isDarkMode ? '#111827' : Color.White)
           .borderRadius(10)
           .shadow({ radius: 4, color: '#1A000000', offsetX: 1, offsetY: 1 })
 
@@ -199,6 +203,7 @@ struct RecommendCourse {
 
 @Component
 struct ExcellentListComp {
+  @Prop isDarkMode: boolean = false;
   @State excellentList: IResourceData[] = [
     {
       id: '1',
@@ -252,12 +257,12 @@ struct ExcellentListComp {
             Text(item.title)
               .fontSize(16)
               .fontWeight(FontWeight.Bold)
-              .fontColor('#333333')
+              .fontColor(this.isDarkMode ? '#F9FAFB' : '#333333')
               .textOverflow({ overflow: TextOverflow.Ellipsis })
               .maxLines(1)
             Text(item.description)
               .fontSize(12)
-              .fontColor('rgba(0,0,0,0.6)')
+              .fontColor(this.isDarkMode ? '#9CA3AF' : 'rgba(0,0,0,0.6)')
               .textOverflow({ overflow: TextOverflow.Ellipsis })
               .maxLines(2)
           }
@@ -270,7 +275,7 @@ struct ExcellentListComp {
       })
     }
     .width('100%')
-    .backgroundColor(Color.White)
+    .backgroundColor(this.isDarkMode ? '#020617' : Color.White)
     .padding({ top: 10, bottom: 10 })
     .margin({ left: 8, right: 8 })
   }

@@ -1,7 +1,7 @@
 import router from '@ohos.router';
 import { promptAction } from '@kit.ArkUI';
 import { Context } from '@kit.AbilityKit';
-import { getToken } from '../../util/StorageUtil';
+import { getDarkMode, getToken } from '../../util/StorageUtil';
 import { getFeedbackDetailRequest, FeedbackDetailRecord } from '../../util/HttpUtil';
 
 interface FeedbackItem {
@@ -44,11 +44,15 @@ export struct FeedbackDetailPage {
 
   @State loading: boolean = false;
   @State loadError: string = '';
+  @State isDarkMode: boolean = false;
 
   private studentInfo: string = '反馈详情';
   private currentId: string = '';
 
-  onPageShow() {
+  async onPageShow() {
+    const context = getContext(this) as Context;
+    this.isDarkMode = await getDarkMode(context);
+
     const params = router.getParams() as RouterParams;
     if (params) {
       if (params.feedbackData) {
@@ -99,7 +103,7 @@ export struct FeedbackDetailPage {
         top: 12,
         bottom: 12
       })
-      .backgroundColor('#F5F5F5')
+      .backgroundColor(this.isDarkMode ? '#101622' : '#F5F5F5')
 
       Text(this.studentInfo)
         .fontSize(14)
@@ -160,7 +164,7 @@ export struct FeedbackDetailPage {
               Text(this.feedbackData.title)
                 .fontSize(20)
                 .fontWeight(FontWeight.Bold)
-                .fontColor('#333333')
+                .fontColor(this.isDarkMode ? '#F9FAFB' : '#333333')
                 .layoutWeight(1)
 
               Text(this.feedbackData.status)
@@ -182,10 +186,10 @@ export struct FeedbackDetailPage {
               Column({ space: 4 }) {
                 Text('反馈人')
                   .fontSize(12)
-                  .fontColor('#666666')
+                  .fontColor(this.isDarkMode ? '#9CA3AF' : '#666666')
                 Text(this.feedbackData.nickName || '匿名用户')
                   .fontSize(14)
-                  .fontColor('#333333')
+                  .fontColor(this.isDarkMode ? '#F9FAFB' : '#333333')
                   .fontWeight(FontWeight.Medium)
               }
               .layoutWeight(1)
@@ -231,7 +235,7 @@ export struct FeedbackDetailPage {
           }
           .width('100%')
           .padding(16)
-          .backgroundColor(Color.White)
+          .backgroundColor(this.isDarkMode ? '#111827' : Color.White)
           .borderRadius(12)
           .shadow({
             radius: 2,
@@ -249,7 +253,7 @@ export struct FeedbackDetailPage {
 
             Text(this.feedbackData.description)
               .fontSize(14)
-              .fontColor('#555555')
+              .fontColor(this.isDarkMode ? '#E5E7EB' : '#555555')
               .lineHeight(20)
           }
           .width('100%')
@@ -296,12 +300,12 @@ export struct FeedbackDetailPage {
 
               Text(this.feedbackData.reply)
                 .fontSize(14)
-                .fontColor('#555555')
+                .fontColor(this.isDarkMode ? '#E5E7EB' : '#555555')
                 .lineHeight(20)
             }
             .width('100%')
             .padding(16)
-            .backgroundColor(Color.White)
+            .backgroundColor(this.isDarkMode ? '#111827' : Color.White)
             .borderRadius(12)
             .shadow({
               radius: 2,
@@ -343,7 +347,7 @@ export struct FeedbackDetailPage {
     }
     .width('100%')
     .height('100%')
-    .backgroundColor('#F5F5F5')
+    .backgroundColor(this.isDarkMode ? '#020617' : '#F5F5F5')
   }
 
   private getStatusColor(status: string): ResourceColor {

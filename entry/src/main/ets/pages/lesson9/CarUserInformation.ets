@@ -1,7 +1,7 @@
 import { promptAction } from '@kit.ArkUI';
 import { Context } from '@kit.AbilityKit';
 import router from '@ohos.router';
-import { getToken } from '../../util/StorageUtil';
+import { getDarkMode, getToken } from '../../util/StorageUtil';
 import { CarOperationLogRecord, getCarOperationLogListRequest, deleteCarOperationLogRequest, CarOperationLogQueryParams } from '../../util/HttpUtil';
 
 interface CarOperationLogViewItem extends CarOperationLogRecord {
@@ -28,8 +28,11 @@ export struct CarUserInformationPage {
   @State private loadError: string = '';
   @State private refreshing: boolean = false;
   @State private deletingId: string = '';
+  @State private isDarkMode: boolean = false;
 
-  aboutToAppear() {
+  async aboutToAppear() {
+    const context = getContext(this) as Context;
+    this.isDarkMode = await getDarkMode(context);
     this.loadLogs();
   }
 
@@ -49,7 +52,7 @@ export struct CarUserInformationPage {
     }
     .width('100%')
     .height('100%')
-    .backgroundColor('#F6F6F8')
+    .backgroundColor(this.isDarkMode ? '#020617' : '#F6F6F8')
   }
 
   private async loadLogs(isRefresh: boolean = false) {
@@ -237,7 +240,7 @@ export struct CarUserInformationPage {
       }
       .width('100%')
       .padding({ left: 16, right: 16, top: 12, bottom: 12 })
-      .backgroundColor('#FFFFFF')
+      .backgroundColor(this.isDarkMode ? '#111827' : '#FFFFFF')
 
       Divider()
         .strokeWidth(1)
@@ -289,11 +292,11 @@ export struct CarUserInformationPage {
     Column({ space: 8 }) {
       Text('暂无车辆操作记录')
         .fontSize(16)
-        .fontColor('#111827')
+        .fontColor(this.isDarkMode ? '#F9FAFB' : '#111827')
 
       Text('车辆控制操作将在此处展示，稍后再来看看吧！')
         .fontSize(13)
-        .fontColor('#6B7280')
+        .fontColor(this.isDarkMode ? '#9CA3AF' : '#6B7280')
         .textAlign(TextAlign.Center)
         .margin({ left: 32, right: 32 })
 
@@ -337,22 +340,22 @@ export struct CarUserInformationPage {
           Text(item.operaType ?? '未知操作')
             .fontSize(16)
             .fontWeight(FontWeight.Bold)
-            .fontColor('#111827')
+            .fontColor(this.isDarkMode ? '#F9FAFB' : '#111827')
 
           if (item.createTime) {
             Text(item.createTime)
               .fontSize(12)
-              .fontColor('#6B7280')
+              .fontColor(this.isDarkMode ? '#9CA3AF' : '#6B7280')
           }
         }
 
         Text(item.operaContent ?? '暂无描述')
           .fontSize(13)
-          .fontColor('#374151')
+          .fontColor(this.isDarkMode ? '#E5E7EB' : '#374151')
 
         Text(`操作人：${item.userName ?? '未知'} | 车辆：${item.carName ?? '--'}`)
           .fontSize(12)
-          .fontColor('#6B7280')
+          .fontColor(this.isDarkMode ? '#9CA3AF' : '#6B7280')
 
         Row() {
           Blank()

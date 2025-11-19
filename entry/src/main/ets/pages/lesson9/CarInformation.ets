@@ -26,7 +26,7 @@ interface ClimatePreviousState {
 @Entry
 @Component
 export struct CarInformationPage {
-  @State isDarkMode: boolean = false;
+  @Prop isDarkMode: boolean = false;
   @State batteryLevel: number = 88;
   @State range: number = 488;
   @State climateEnabled: boolean = false;
@@ -414,16 +414,6 @@ export struct CarInformationPage {
             url: 'pages/lesson9/CarUserInformation'
           });
         })
-
-        Button(this.isDarkMode ? '浅色模式' : '深色模式', { type: ButtonType.Normal })
-          .fontSize(12)
-          .padding({ left: 12, right: 12, top: 6, bottom: 6 })
-          .backgroundColor(this.isDarkMode ? '#2C2C34' : '#E5E5EA')
-          .fontColor(this.isDarkMode ? '#FFFFFF' : '#000000')
-          .borderRadius(20)
-          .onClick(() => {
-            this.isDarkMode = !this.isDarkMode;
-          })
       }
     }
     .width('100%')

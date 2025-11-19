@@ -22,6 +22,7 @@ interface FeedbackItem {
 @Entry
 @Component
 export struct FeedbackListPage {
+  @Prop isDarkMode: boolean = false;
   @State studentInfo: string = '车辆反馈系统';
   @State feedbackList: FeedbackItem[] = [];
   @State isLoading: boolean = false;
@@ -96,7 +97,7 @@ export struct FeedbackListPage {
         top: 12,
         bottom: 12
       })
-      .backgroundColor('#F5F5F5')
+      .backgroundColor(this.isDarkMode ? '#101622' : '#F5F5F5')
 
       // Text(this.studentInfo)
       Text("23001010613")
@@ -155,7 +156,7 @@ export struct FeedbackListPage {
       }
       .width('100%')
       .padding(16)
-      .backgroundColor(Color.White)
+      .backgroundColor(this.isDarkMode ? '#111827' : Color.White)
       .margin({ bottom: 8 })
 
       if (this.isLoading) {
@@ -228,7 +229,7 @@ export struct FeedbackListPage {
     }
     .width('100%')
     .height('100%')
-    .backgroundColor('#FFFFFF')
+    .backgroundColor(this.isDarkMode ? '#020617' : '#FFFFFF')
   }
 
   @Builder
